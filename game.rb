@@ -1,50 +1,52 @@
-# In the game of TicTacToe, there's only two players, two tokens, and one board.
 # Create a class to represent each player and their attributes
 class Player
-  # Make a way to get and set the token for each player
-  attr_accessor :marker
+  @@player_total = 0
+  # Make a way to get and set the token and moves for each player
+  attr_accessor :marker, :moves, :winner
+  attr_reader :name
 
   def initialize(name)
     @name = name
+    @@player_total += 1
+    @moves = []
+    @winner = false
   end
 end
 
-# I want the board to be displayed like below, but I don't want to keep repeating myself in my code
-# puts " 1 | 2 | 3 "
-# puts "---+---+---"
-# puts " 4 | 5 | 6 "
-# puts "---+---+---"
-# puts " 7 | 8 | 9 "
+# Create a class to represent the game board
 class Board
-  attr_accessor :board
+  attr_reader :winning_combinations
+  attr_accessor :board_values
 
   def initialize
-    @board = [1,2,3,4,5,6,7,8,9]
+    @board_values = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    # Create a hash to store all winning combos
+    @winning_combinations = {
+      top_row: [1, 2, 3],
+      middle_row: [4, 5, 6],
+      bottom_row: [7, 8, 9],
+      first_column: [1, 4, 7],
+      second_column: [2, 5, 8],
+      third_column: [3, 6, 9],
+      first_diagonal: [1, 5, 9],
+      second_diagonal: [3, 5, 7]
+    }
   end
 
   def display_board
     puts
-    puts " #{board[0]} | #{board[1]} | #{board[2]} "
+    puts " #{@board_values[0]} | #{@board_values[1]} | #{@board_values[2]} "
     puts '---+---+---'
-    puts " #{board[3]} | #{board[4]} | #{board[5]} "
+    puts " #{@board_values[3]} | #{@board_values[4]} | #{@board_values[5]} "
     puts '---+---+---'
-    puts " #{board[6]} | #{board[7]} | #{board[8]} "
+    puts " #{@board_values[6]} | #{@board_values[7]} | #{@board_values[8]} "
     puts
   end
-end
 
-# The current flow of the program goes like this:
-# Ask player one for their name
-# Create a new player object using their name
-# Ask the player what token they prefer to use
-# If their input is something greater than one character, let the user know and have them retry
-# If the token they choose is appropriate, store it in their player object
-# Repeat the above for player two
-# Instantiate the game board
-# Ask current player to choose a spot on the game board that isn't already selected
-# Store their token in the selected spot
-# Update the board to show which spots have been used
-# Repeat the process with the next player
+  def set_value(value, marker)
+    @board_values[value - 1] = marker
+  end
+end
 
 # Create a function to set the marker for each player
 def create_marker(player)
@@ -65,17 +67,54 @@ def create_player(player_number)
   name = gets.chomp
   # Create the player instance using the Player class
   player = Player.new(name)
-  # Set the marker for the player
   create_marker(player)
   player
 end
 
+def make_move(player, board)
+  # Display board
+  board.display_board
+  # Ask for player's input 
+  puts "#{player.name}, choose a spot on the board to place your marker!"
+  player_choice = gets.chomp.to_i
+  # Until their input is valid, keep asking them to choose a spot
+  until player_choice == board.board_values[player_choice - 1]
+    puts "#{player.name}, please choose a valid spot on the board!"
+    player_choice = gets.chomp
+  end
+  # Store the value they choose in an array that holds all their moves
+  player.moves.push(player_choice)
+  # Replace the value on the board with the player's token
+  board.board_values[player_choice - 1] = player.marker
+  # Compare the player's moves array to all of the possible winning combos
+  winning_combos = board.winning_combinations
+  winning_combos.each do |key, combo|
+    matched_moves = player.moves.intersection(combo)
+    # If the array matches up with any of the winning combos, declare the current player as the winner
+    if matched_moves.sort == combo
+      puts "Congrats #{player.name}! You win!!"
+      player.winner = true
+    end
+  end
+end
+
+# Starts the game
 def game
   puts 'Welcome to the game of TicTacToe!'
-  # Create players one and two
   player1 = create_player(1)
   player2 = create_player(2)
   # Instantiate the board
+  board = Board.new
+  winner_declared = false
+  until winner_declared == true
+    make_move(player1, board)
+    if player1.winner == true
+      winner_declared = true
+    else
+      make_move(player2, board)
+      winner_declared = player2.winner ? true : false
+    end
+  end
 end
 
 game
